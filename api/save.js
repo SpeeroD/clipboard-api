@@ -10,5 +10,5 @@ export default async function handler(req, res) {
     return res.status(200).json(latestData || {});
   }
 
-  return res.status(405).end(); // méthode non autorisée
+  return res.status(405).end();
 }
