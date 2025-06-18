@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "formidable": "^3.8.0"
+    "formidable": "2.0.1"
   }
 }
