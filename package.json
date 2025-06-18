@@ -1,0 +1,7 @@
+{
+  "name": "clipboard-api",
+  "version": "1.0.0",
+  "dependencies": {
+    "formidable-serverless": "^0.1.3"
+  }
+}
