@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "formidable-serverless": "^0.1.2"
+    "formidable": "^3.8.0"
   }
 }
