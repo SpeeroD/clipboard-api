@@ -1,35 +1,35 @@
-import formidable from 'formidable-serverless';
+import { IncomingForm } from 'formidable';
 
 export const config = {
   api: {
-    bodyParser: false, // On désactive le bodyParser de Vercel
+    bodyParser: false,
   },
 };
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).send('Method Not Allowed');
+    return res.status(405).send("Méthode non autorisée");
   }
 
-  const form = new formidable.IncomingForm();
+  const form = new IncomingForm();
 
   form.parse(req, (err, fields, files) => {
     if (err) {
-      return res.status(500).json({ error: 'Erreur de parsing' });
+      console.error("Erreur de parsing :", err);
+      return res.status(500).json({ error: "Erreur de parsing" });
     }
 
     const file = files.file;
 
     if (!file) {
-      return res.status(400).json({ error: 'Aucun fichier reçu' });
+      return res.status(400).json({ error: "Aucun fichier reçu" });
     }
 
-    // Exemple : envoyer le nom + type + taille du fichier
     return res.status(200).json({
-      filename: file.originalFilename,
-      mimetype: file.mimetype,
-      size: file.size,
-      message: "Fichier reçu avec succès"
+      filename: file[0]?.originalFilename,
+      mimetype: file[0]?.mimetype,
+      size: file[0]?.size,
+      message: "✅ Fichier reçu avec succès"
     });
   });
 }
