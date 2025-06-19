@@ -1,4 +1,6 @@
 import { IncomingForm } from 'formidable';
+import fs from 'fs';
+import path from 'path';
 
 export const config = {
   api: {
@@ -6,30 +8,26 @@ export const config = {
   },
 };
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).send("Méthode non autorisée");
-  }
+let lastFile = null;
 
-  const form = new IncomingForm();
+export default async (req, res) => {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const form = new IncomingForm({ keepExtensions: true });
 
   form.parse(req, (err, fields, files) => {
-    if (err) {
-      console.error("Erreur de parsing :", err);
-      return res.status(500).json({ error: "Erreur de parsing" });
-    }
+    if (err || !files.file) return res.status(400).json({ error: 'Erreur lors du traitement du fichier' });
 
-    const file = files.file;
+    const file = files.file[0];
+    const tempPath = file.filepath;
+    const buffer = fs.readFileSync(tempPath);
 
-    if (!file) {
-      return res.status(400).json({ error: "Aucun fichier reçu" });
-    }
+    lastFile = {
+      filename: file.originalFilename,
+      mimetype: file.mimetype,
+      content: buffer,
+    };
 
-    return res.status(200).json({
-      filename: file[0]?.originalFilename,
-      mimetype: file[0]?.mimetype,
-      size: file[0]?.size,
-      message: "✅ Fichier reçu avec succès"
-    });
+    res.status(200).json({ status: 'fichier reçu', filename: lastFile.filename });
   });
-}
+};
