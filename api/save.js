@@ -1,20 +1,12 @@
-export default async function handler(req, res) {
-  if (req.method === "POST") {
-    const chunks = [];
-    for await (const chunk of req) {
-      chunks.push(chunk);
-    }
-    const buffer = Buffer.concat(chunks);
+import { Redis } from '@upstash/redis';
 
-    // nom dynamique basé sur la date
-    const fs = require("fs");
-    const path = require("path");
-    const filename = `file_${Date.now()}.bin`;
-    fs.writeFileSync(path.join("/tmp", filename), buffer);
+const redis = Redis.fromEnv(); // variables d'environnement: UPSTASH_REDIS_REST_URL & UPSTASH_REDIS_REST_TOKEN
 
-    console.log(`✅ Fichier reçu et enregistré sous ${filename}`);
-    return res.status(200).json({ message: "Fichier reçu", filename });
-  }
+export default async (req, res) => {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  const text = req.body;
+  if (!text) return res.status(400).json({ error: 'No text provided' });
 
-  return res.status(405).json({ message: "Méthode non autorisée" });
-}
+  await redis.set('clipboard_text', text);
+  return res.status(200).json({ status: 'saved' });
+};
