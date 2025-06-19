@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "dependencies": {
     "formidable": "2.0.1",
-    "@upstash/redis": "^1.21.0"
+    "@upstash/redis": "^1.21.0",
     "node-fetch": "^3.3.2"
   }
 }
