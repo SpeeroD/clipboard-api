@@ -1,4 +1,8 @@
-import Busboy from 'busboy';
+// --- upload.js ---
+// Reçoit un fichier via multipart/form-data et le stocke en mémoire
+
+import formidable from 'formidable';
+import fs from 'fs';
 
 export const config = {
   api: {
@@ -6,50 +10,32 @@ export const config = {
   },
 };
 
-let lastFile = null;
+// Variable temporaire partagée
+export let lastFile = null;
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*'); // ← ✅ TOUJOURS avant tout
+  res.setHeader('Access-Control-Allow-Origin', '*');
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Méthode non autorisée' });
   }
 
-  try {
-    const busboy = Busboy({ headers: req.headers });
-    let fileBuffer = Buffer.alloc(0);
-    let fileInfo = null;
+  const form = formidable({ keepExtensions: true, multiples: false });
 
-    await new Promise((resolve, reject) => {
-      busboy.on('file', (name, file, info) => {
-        const { filename, mimeType } = info;
-        file.on('data', (data) => {
-          fileBuffer = Buffer.concat([fileBuffer, data]);
-        });
-        file.on('end', () => {
-          fileInfo = {
-            filename,
-            mimetype: mimeType,
-            content: fileBuffer,
-          };
-        });
-      });
-
-      busboy.on('error', reject);
-      busboy.on('finish', resolve);
-
-      req.pipe(busboy);
-    });
-
-    if (!fileInfo) {
-      return res.status(400).json({ error: 'Aucun fichier reçu' });
+  form.parse(req, (err, fields, files) => {
+    if (err || !files.file) {
+      return res.status(400).json({ error: 'Erreur lors du traitement du fichier' });
     }
 
-    lastFile = fileInfo;
+    const file = files.file[0];
+    const buffer = fs.readFileSync(file.filepath);
 
-    return res.status(200).json({ status: 'fichier reçu', filename: lastFile.filename });
-  } catch (err) {
-    console.error('Erreur Busboy :', err);
-    return res.status(500).json({ error: 'Erreur serveur', details: err.message });
-  }
+    lastFile = {
+      filename: file.originalFilename,
+      mimetype: file.mimetype,
+      content: buffer,
+    };
+
+    res.status(200).json({ status: 'fichier reçu', filename: file.originalFilename });
+  });
 }
