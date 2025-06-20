@@ -1,4 +1,4 @@
-import { IncomingForm } from 'formidable';
+import formidable from 'formidable';
 import fs from 'fs';
 import path from 'path';
 
@@ -10,7 +10,6 @@ export const config = {
 
 let lastFile = null;
 
-// Fonction pour exposer lastFile à d'autres modules
 export function getLastFile() {
   return lastFile;
 }
