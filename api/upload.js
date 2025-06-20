@@ -1,6 +1,7 @@
+// /api/upload.js
+
 import formidable from 'formidable';
 import fs from 'fs';
-import path from 'path';
 
 export const config = {
   api: {
@@ -23,14 +24,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const form = new IncomingForm({ keepExtensions: true });
+  const form = formidable({ multiples: false, keepExtensions: true });
 
   form.parse(req, (err, fields, files) => {
     if (err || !files.file) {
       return res.status(400).json({ error: 'Erreur lors du traitement du fichier' });
     }
 
-    const file = files.file[0];
+    const file = files.file;
     const tempPath = file.filepath;
     const buffer = fs.readFileSync(tempPath);
 
