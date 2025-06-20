@@ -1,5 +1,6 @@
 {
   "name": "clipboard-api",
+  "type": "module"
   "version": "1.0.0",
   "dependencies": {
     "formidable": "2.0.1",
