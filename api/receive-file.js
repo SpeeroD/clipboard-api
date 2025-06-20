@@ -1,17 +1,19 @@
-import { NextResponse } from 'next/server';
+import { getLastFile, clearLastFile } from './upload.js';
 
-let lastFile = null;
-
-export async function GET(req) {
-  if (!lastFile) {
-    return NextResponse.json({ error: 'Aucun fichier disponible' }, { status: 404 });
+export default async function handler(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const headers = new Headers();
-  headers.set('Content-Disposition', `attachment; filename="${lastFile.filename}"`);
-  headers.set('Content-Type', lastFile.mimetype);
+  const file = getLastFile();
 
-  const response = new Response(lastFile.content, { headers });
-  lastFile = null; // On efface le fichier après téléchargement
-  return response;
+  if (!file) {
+    return res.status(404).json({ error: 'Aucun fichier disponible' });
+  }
+
+  res.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
+  res.setHeader('Content-Type', file.mimetype);
+  res.send(file.content);
+
+  clearLastFile(); // Vide après réception
 }
