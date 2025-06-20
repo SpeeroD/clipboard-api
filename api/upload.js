@@ -1,5 +1,6 @@
-import formidable from 'formidable';
-import fs from 'fs';
+import { IncomingMessage } from 'http';
+import Busboy from 'busboy';
+import { buffer } from 'stream/consumers';
 
 export const config = {
   api: {
@@ -9,36 +10,37 @@ export const config = {
 
 let lastFile = null;
 
-export function getLastFile() {
-  return lastFile;
-}
-
-export function clearLastFile() {
-  lastFile = null;
-}
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Méthode non autorisée' });
   }
 
-  const form = formidable({ keepExtensions: true, multiples: false });
+  const bb = Busboy({ headers: req.headers });
 
-  form.parse(req, async (err, fields, files) => {
-    if (err || !files.file) {
-      return res.status(400).json({ error: 'Erreur lors du traitement du fichier' });
-    }
+  let fileInfo = null;
+  let fileBuffer = Buffer.alloc(0);
 
-    const file = files.file; // plus de [0]
-    const tempPath = file.filepath || file.path;
-    const buffer = fs.readFileSync(tempPath);
-
-    lastFile = {
-      filename: file.originalFilename || file.name,
-      mimetype: file.mimetype || file.type,
-      content: buffer,
-    };
-
-    res.status(200).json({ status: 'fichier reçu', filename: lastFile.filename });
+  bb.on('file', (name, file, info) => {
+    const { filename, mimeType } = info;
+    file.on('data', (data) => {
+      fileBuffer = Buffer.concat([fileBuffer, data]);
+    });
+    file.on('end', () => {
+      fileInfo = {
+        filename,
+        mimetype: mimeType,
+        content: fileBuffer,
+      };
+    });
   });
+
+  bb.on('finish', () => {
+    if (!fileInfo) {
+      return res.status(400).json({ error: 'Aucun fichier reçu' });
+    }
+    lastFile = fileInfo;
+    res.status(200).json({ status: 'fichier reçu', filename: fileInfo.filename });
+  });
+
+  req.pipe(bb);
 }
