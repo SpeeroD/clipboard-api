@@ -1,6 +1,4 @@
 // --- receive-file.js ---
-// Sert le fichier temporairement stocké et le supprime ensuite
-
 import { lastFile } from './upload.js';
 
 export const config = {
@@ -24,5 +22,6 @@ export default async function handler(req, res) {
   res.setHeader('Content-Type', lastFile.mimetype);
   res.send(lastFile.content);
 
-  // Effacer le fichier de la mémoire
+  // Nettoyage
   lastFile = null;
+}
