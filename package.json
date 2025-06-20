@@ -1,6 +1,5 @@
 {
-  "name": "clipboard-api",
-  "version": "1.0.0",
+  "type": "module",
   "dependencies": {
     "formidable": "2.0.1",
     "@upstash/redis": "^1.21.0",
