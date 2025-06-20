@@ -1,5 +1,3 @@
-// /api/upload.js
-
 import formidable from 'formidable';
 import fs from 'fs';
 
@@ -24,20 +22,20 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const form = formidable({ multiples: false, keepExtensions: true });
+  const form = formidable({ keepExtensions: true, multiples: false });
 
-  form.parse(req, (err, fields, files) => {
+  form.parse(req, async (err, fields, files) => {
     if (err || !files.file) {
       return res.status(400).json({ error: 'Erreur lors du traitement du fichier' });
     }
 
-    const file = files.file;
-    const tempPath = file.filepath;
+    const file = files.file; // plus de [0]
+    const tempPath = file.filepath || file.path;
     const buffer = fs.readFileSync(tempPath);
 
     lastFile = {
-      filename: file.originalFilename,
-      mimetype: file.mimetype,
+      filename: file.originalFilename || file.name,
+      mimetype: file.mimetype || file.type,
       content: buffer,
     };
 
