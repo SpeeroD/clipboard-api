@@ -1,5 +1,4 @@
-import formidable from 'formidable';
-import fs from 'fs';
+import Busboy from 'busboy';
 
 export const config = {
   api: {
@@ -9,36 +8,48 @@ export const config = {
 
 let lastFile = null;
 
-export function getLastFile() {
-  return lastFile;
-}
-
-export function clearLastFile() {
-  lastFile = null;
-}
-
 export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*'); // ← ✅ TOUJOURS avant tout
+
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Méthode non autorisée' });
   }
 
-  const form = formidable({ keepExtensions: true, multiples: false });
+  try {
+    const busboy = Busboy({ headers: req.headers });
+    let fileBuffer = Buffer.alloc(0);
+    let fileInfo = null;
 
-  form.parse(req, async (err, fields, files) => {
-    if (err || !files.file) {
-      return res.status(400).json({ error: 'Erreur lors du traitement du fichier' });
+    await new Promise((resolve, reject) => {
+      busboy.on('file', (name, file, info) => {
+        const { filename, mimeType } = info;
+        file.on('data', (data) => {
+          fileBuffer = Buffer.concat([fileBuffer, data]);
+        });
+        file.on('end', () => {
+          fileInfo = {
+            filename,
+            mimetype: mimeType,
+            content: fileBuffer,
+          };
+        });
+      });
+
+      busboy.on('error', reject);
+      busboy.on('finish', resolve);
+
+      req.pipe(busboy);
+    });
+
+    if (!fileInfo) {
+      return res.status(400).json({ error: 'Aucun fichier reçu' });
     }
 
-    const file = files.file; // plus de [0]
-    const tempPath = file.filepath || file.path;
-    const buffer = fs.readFileSync(tempPath);
+    lastFile = fileInfo;
 
-    lastFile = {
-      filename: file.originalFilename || file.name,
-      mimetype: file.mimetype || file.type,
-      content: buffer,
-    };
-
-    res.status(200).json({ status: 'fichier reçu', filename: lastFile.filename });
-  });
+    return res.status(200).json({ status: 'fichier reçu', filename: lastFile.filename });
+  } catch (err) {
+    console.error('Erreur Busboy :', err);
+    return res.status(500).json({ error: 'Erreur serveur', details: err.message });
+  }
 }
